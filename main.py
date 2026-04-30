@@ -42,18 +42,19 @@ async def ocr_image(file: UploadFile = File(...)):
                 "base64Image": f"data:{mime};base64,{b64}",
                 "language": "eng",
                 "isOverlayRequired": "true",
-                "OCREngine": "2",          # Engine 2 is beter voor grafische tekst
+                "OCREngine": "1",
                 "scale": "true",
                 "detectOrientation": "true",
             },
         )
 
     if r.status_code != 200:
-        raise HTTPException(status_code=502, detail="OCR service niet bereikbaar")
+        raise HTTPException(status_code=502, detail=f"OCR service fout: HTTP {r.status_code}")
 
     data = r.json()
     if data.get("IsErroredOnProcessing"):
-        raise HTTPException(status_code=400, detail=data.get("ErrorMessage", "OCR fout"))
+        # Geef lege lijst terug i.p.v. fout — gebruiker kan handmatig typen
+        return {"lines": [], "error": data.get("ErrorMessage", "OCR mislukt")}
 
     # Verzamel tekstregels gesorteerd op grootte (grotere tekst = waarschijnlijk titel)
     lines_with_height: list[tuple[float, str]] = []
